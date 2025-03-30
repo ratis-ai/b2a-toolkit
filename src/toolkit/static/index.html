@@ -4,16 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>B2A Toolkit Dashboard</title>
-    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
     <div class="container">
         <h1>B2A Toolkit Dashboard</h1>
-        <div class="logs-container">
+        <div class="filters">
+            <input type="text" id="toolFilter" placeholder="Filter by tool name...">
+            <select id="statusFilter">
+                <option value="all">All Status</option>
+                <option value="success">Success</option>
+                <option value="error">Error</option>
+            </select>
+        </div>
+        <div class="logs">
             <h2>Recent Tool Calls</h2>
             <div id="logs-list"></div>
         </div>
     </div>
-    <script src="/app.js"></script>
+    <script src="/static/app.js"></script>
 </body>
 </html> 

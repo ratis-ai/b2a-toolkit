@@ -8,8 +8,8 @@ import logging
 from inspect import getmembers
 import time
 from .logging import ToolLogger
-
-from .core import ToolRegistry
+from .core import ToolRegistry, Tool
+import asyncio
 
 app = FastAPI(title="B2A Toolkit Server")
 registry = ToolRegistry()
@@ -28,42 +28,18 @@ async def get_manifest():
     }
 
 @app.post("/run/{tool_name}")
-async def run_tool(tool_name: str, request: Dict[str, Any]):
-    """Execute a specific tool with given inputs"""
-    if tool_name not in registry.tools:
+async def run_tool(tool_name: str, request: ToolRequest):
+    """Execute a tool with the given inputs"""
+    tool = registry.get_tool(tool_name)
+    if not tool:
         raise HTTPException(status_code=404, detail=f"Tool '{tool_name}' not found")
         
-    tool = registry.tools[tool_name]
-    inputs = request.get("inputs", {})
-    
-    start_time = time.time()
     try:
-        # Execute the tool
-        result = await tool.execute(**inputs)
-        
-        # Log successful execution
-        duration_ms = (time.time() - start_time) * 1000
-        logger.log_call(
-            tool_name=tool_name,
-            inputs=inputs,
-            outputs=result,
-            duration_ms=duration_ms,
-            agent_metadata=request.get("agent_metadata")
-        )
-        
-        return {"outputs": result}
-        
+        # Execute the tool and await if it's async
+        result = await tool.execute(**request.inputs)
+        return {"result": result}
     except Exception as e:
-        # Log failed execution
-        duration_ms = (time.time() - start_time) * 1000
-        logger.log_call(
-            tool_name=tool_name,
-            inputs=inputs,
-            error=str(e),
-            duration_ms=duration_ms,
-            agent_metadata=request.get("agent_metadata")
-        )
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e))
 
 def _load_module(module_path: Path) -> object:
     """Load a Python module from a file path using importlib"""

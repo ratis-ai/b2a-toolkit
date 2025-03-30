@@ -13,6 +13,8 @@ from .server import app, load_tools_from_path
 from .logging import ToolLogger
 from .dashboard import create_dashboard
 import importlib.util
+from .webhooks import WebhookManager
+from .replay import ReplayManager
 
 def _load_module(module_path: Path) -> object:
     """Load a Python module from a file path using importlib"""
@@ -113,10 +115,8 @@ def test(tool_name: str, module_path: str):
         
         click.echo("\n📥 Input Parameters:")
         if tool.metadata.inputs:
-            for input_param in tool.metadata.inputs:
-                click.echo(f"  • {input_param.name} ({input_param.type})")
-                if hasattr(input_param, 'description') and input_param.description:
-                    click.echo(f"    {input_param.description}")
+            for param_name, param_type in tool.metadata.inputs.items():
+                click.echo(f"  • {param_name} ({param_type})")
         else:
             click.echo("  No input parameters required")
             
@@ -197,14 +197,16 @@ def _display_log(log, format='text'):
     else:
         # Text format
         status = "✓" if log.outputs else "✗"
-        click.echo(f"[{log.timestamp}] {status} {log.tool_name} ({log.duration_ms:.0f}ms)")
-        click.echo(f"  ID: {log.call_id}")
-        click.echo(f"  Inputs: {json.dumps(log.inputs, indent=2)}")
+        # Highlight the call ID and make it easily copyable
+        click.echo(f"\n🔍 Call ID: {click.style(log.call_id, fg='green', bold=True)}")
+        click.echo(f"   [{log.timestamp}] {status} {log.tool_name} ({log.duration_ms:.0f}ms)")
+        click.echo(f"   Inputs: {json.dumps(log.inputs, indent=2)}")
         if log.outputs:
-            click.echo(f"  Outputs: {json.dumps(log.outputs, indent=2)}")
+            click.echo(f"   Outputs: {json.dumps(log.outputs, indent=2)}")
         if log.error:
-            click.echo(f"  Error: {log.error}", err=True)
-        click.echo("")
+            click.echo(f"   Error: {log.error}", err=True)
+        # Add replay hint
+        click.echo("─" * 80)
 
 @cli.command()
 @click.option('--host', default="127.0.0.1", help="Host to bind to")
@@ -243,6 +245,102 @@ def inspect(tool_name: str, last: int):
             
     except Exception as e:
         click.echo(f"Error inspecting tool: {e}", err=True)
+        sys.exit(1)
+
+@cli.group()
+def webhook():
+    """Manage webhooks for tool events"""
+    pass
+
+@webhook.command(name='add')
+@click.argument('url')
+@click.option('--tool', help='Tool name (optional, for tool-specific webhooks)')
+@click.option('--secret', help='Webhook secret for verification')
+def webhook_add(url: str, tool: Optional[str] = None, secret: Optional[str] = None):
+    """Register a new webhook"""
+    try:
+        webhook_mgr = WebhookManager()
+        webhook_mgr.add_webhook(url, tool_name=tool, secret=secret)
+        click.echo(f"✅ Webhook registered successfully:")
+        click.echo(f"   URL: {url}")
+        if tool:
+            click.echo(f"   Tool: {tool}")
+        click.echo("\nWebhook will receive events: tool.call, tool.success, tool.error")
+    except Exception as e:
+        click.echo(f"❌ Error registering webhook: {e}", err=True)
+        sys.exit(1)
+
+@webhook.command(name='list')
+def webhook_list():
+    """List registered webhooks"""
+    try:
+        webhook_mgr = WebhookManager()
+        webhooks = webhook_mgr.list_webhooks()
+        
+        if not webhooks:
+            click.echo("No webhooks registered")
+            return
+            
+        click.echo("📋 Registered webhooks:")
+        for hook in webhooks:
+            click.echo(f"\n• URL: {hook['url']}")
+            if hook['tool_name']:
+                click.echo(f"  Tool: {hook['tool_name']}")
+            click.echo(f"  Active: {hook['active']}")
+    except Exception as e:
+        click.echo(f"❌ Error listing webhooks: {e}", err=True)
+        sys.exit(1)
+
+@webhook.command(name='remove')
+@click.argument('url')
+@click.option('--tool', help='Tool name (optional)')
+def webhook_remove(url: str, tool: Optional[str] = None):
+    """Remove a registered webhook"""
+    try:
+        webhook_mgr = WebhookManager()
+        webhook_mgr.remove_webhook(url, tool_name=tool)
+        click.echo("✅ Webhook removed successfully")
+    except Exception as e:
+        click.echo(f"❌ Error removing webhook: {e}", err=True)
+        sys.exit(1)
+
+@cli.command()
+@click.argument('call_id')
+@click.argument('module_path', type=click.Path(exists=True))
+def replay(call_id: str, module_path: str):
+    """Replay a specific tool call"""
+    try:
+        # Load the module to get access to tools
+        module = _load_module(Path(module_path))
+        registry = ToolRegistry()
+        
+        # Register tools from the module
+        for name, obj in getmembers(module):
+            if hasattr(obj, 'tool'):
+                registry.register(obj.tool)
+        
+        replay_mgr = ReplayManager()
+        result = replay_mgr.replay_call(call_id, registry)
+        
+        click.echo(f"🔄 Replaying call: {call_id}")
+        click.echo("\n📥 Original inputs:")
+        click.echo(json.dumps(result['original_call']['inputs'], indent=2))
+        
+        if 'replay_result' in result:
+            click.echo("\n📤 Replay output:")
+            click.echo(json.dumps(result['replay_result'], indent=2))
+            
+            if result['original_call'].get('outputs'):
+                click.echo("\n📊 Output comparison:")
+                click.echo("Original and replay outputs match!" if 
+                         result['original_call']['outputs'] == result['replay_result']
+                         else "⚠️  Outputs differ from original call")
+        else:
+            click.echo("\n❌ Replay failed:")
+            click.echo(result['replay_error'])
+            
+    except Exception as e:
+        click.echo(f"❌ Error replaying call: {e}", err=True)
         sys.exit(1)
 
 if __name__ == '__main__':
