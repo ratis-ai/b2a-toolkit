@@ -69,7 +69,12 @@ def create_expense(amount: float, category: str, description: str, date: str):
 toolkit build examples/expense_tool.py -o manifest.json
 ```
 
-3. Start the tool server:
+3. Test your tool:
+```bash
+toolkit test create_expense examples/expense_tool.py
+```
+
+4. Start the tool server:
 ```bash
 toolkit serve examples/expense_tool.py
 ```
@@ -78,7 +83,7 @@ This starts a local server with:
 - GET `/manifest.json` - Get tool definitions
 - POST `/run/<tool_name>` - Execute a tool
 
-4. Use your tools:
+5. Use your tools:
 ```bash
 # Get tool manifest
 curl http://localhost:8000/manifest.json
