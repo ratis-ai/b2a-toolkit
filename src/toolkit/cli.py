@@ -8,6 +8,8 @@ from typing import Optional
 import click
 from .core import ToolRegistry
 import inspect
+import uvicorn
+from .server import app, load_tools_from_path
 
 @click.group()
 def cli():
@@ -82,6 +84,24 @@ def test(tool_name: str, module_path: str):
             
     except Exception as e:
         click.echo(f"Error testing tool: {e}", err=True)
+        sys.exit(1)
+
+@cli.command()
+@click.argument('module_path', type=click.Path(exists=True))
+@click.option('--host', default="127.0.0.1", help="Host to bind to")
+@click.option('--port', default=8000, help="Port to bind to")
+def serve(module_path: str, host: str, port: int):
+    """Start a local server to execute tools"""
+    try:
+        load_tools_from_path(module_path)
+        click.echo(f"Loading tools from {module_path}")
+        click.echo(f"Server running at http://{host}:{port}")
+        click.echo("Available endpoints:")
+        click.echo("  - GET  /manifest.json")
+        click.echo("  - POST /run/<tool_name>")
+        uvicorn.run(app, host=host, port=port)
+    except Exception as e:
+        click.echo(f"Error starting server: {e}", err=True)
         sys.exit(1)
 
 if __name__ == '__main__':

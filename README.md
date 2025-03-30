@@ -4,11 +4,30 @@ A lightweight framework to expose any API as an agent-compatible tool. B2A Toolk
 
 ## Features
 
-- 🎯 Simple decorator-based tool definition
-- 🔒 Built-in authentication handling
-- 📝 Automatic tool manifest generation
-- 🔄 Support for multiple agent frameworks
-- 🛠️ CLI for building and testing tools
+### Current Capabilities ✅
+
+- **Tool Definition**
+  - Simple decorator-based API
+  - Input/output validation
+  - Type checking and conversion
+  - Built-in documentation support
+
+- **Tool Server**
+  - Local HTTP server for tool execution
+  - Automatic manifest generation
+  - RESTful endpoints for tool invocation
+  - Built-in validation and error handling
+
+- **Authentication**
+  - OAuth support
+  - API key support
+  - Configurable scopes
+  - Optional auth requirements
+
+- **Framework Support**
+  - OpenAI MCP spec compatibility
+  - LangChain tool format
+  - CrewAI integration
 
 ## Installation
 
@@ -46,15 +65,28 @@ def create_expense(amount: float, category: str, description: str, date: str):
 ```
 
 2. Build the tool manifest:
-
 ```bash
 toolkit build examples/expense_tool.py -o manifest.json
 ```
 
-3. Test the tool:
-
+3. Start the tool server:
 ```bash
-toolkit test create_expense examples/expense_tool.py
+toolkit serve examples/expense_tool.py
+```
+
+This starts a local server with:
+- GET `/manifest.json` - Get tool definitions
+- POST `/run/<tool_name>` - Execute a tool
+
+4. Use your tools:
+```bash
+# Get tool manifest
+curl http://localhost:8000/manifest.json
+
+# Execute a tool
+curl -X POST http://localhost:8000/run/create_expense \
+  -H "Content-Type: application/json" \
+  -d '{"inputs": {"amount": 100, "category": "office"}}'
 ```
 
 ## Tool Definition
@@ -70,94 +102,29 @@ The `@define_tool` decorator takes the following parameters:
 - `version`: Version of the tool (default: "0.1.0")
 - `tags`: Optional list of tags/categories
 
-## Authentication
-
-ToolPilot supports different authentication types:
-
-- OAuth
-- API Key
-- None (for public APIs)
-
-Example OAuth configuration:
-
-```python
-auth = ToolAuth(
-    type="oauth",
-    required=True,
-    scopes=["expenses:write"]
-)
-```
-
 ## CLI Commands
 
 ### Build Manifest
-
 ```bash
 toolkit build <module_path> [--output <output_file>] [--format <json|openapi>]
 ```
 
-### Test Tool
+### Start Server
+```bash
+toolkit serve <module_path> [--host HOST] [--port PORT]
+```
 
+### Test Tool
 ```bash
 toolkit test <tool_name> <module_path>
 ```
+
 ## Examples
 
 Check out the `examples/` directory for more examples:
 
 - `expense_tool.py`: A simple expense creation tool
 - More examples coming soon...
-
-## Current Capabilities
-
-- **Tool Definition**
-  - Simple decorator-based API
-  - Input/output validation
-  - Type checking and conversion
-  - Built-in documentation support
-
-- **Authentication**
-  - OAuth support
-  - API key support
-  - Configurable scopes
-  - Optional auth requirements
-
-- **Manifest Generation**
-  - JSON format export
-  - CLI tool for building manifests
-  - Validation of tool definitions
-  - Support for metadata and tags
-
-- **Agent Framework Support**
-  - OpenAI MCP spec compatibility
-  - LangChain tool format
-  - CrewAI integration
-
-## Coming Soon 🚀
-
-- **Enhanced Manifest Support**
-  - OpenAPI format export
-  - GraphQL schema generation
-  - Custom format plugins
-  - Schema validation
-
-- **Hosted Dashboard**
-  - Tool registry and discovery
-  - Live testing interface
-  - Usage analytics
-  - Error tracking
-
-- **Advanced Features**
-  - Rate limiting and quotas
-  - Retry handling
-  - Error recovery
-  - Request/response logging
-
-- **Enterprise Features**
-  - Team management
-  - Access control
-  - Audit logging
-  - Custom authentication providers
 
 ## Contributing
 

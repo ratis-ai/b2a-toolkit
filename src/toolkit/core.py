@@ -52,20 +52,28 @@ class Tool:
 
 class ToolRegistry:
     """Registry for managing tools"""
-    def __init__(self):
-        self.tools: Dict[str, Tool] = {}
+    _instance = None
     
-    def register(self, tool: Tool) -> None:
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance.tools = {}
+        return cls._instance
+    
+    def register(self, tool: 'Tool') -> None:
         """Register a new tool"""
         self.tools[tool.metadata.name] = tool
-    
-    def get_tool(self, name: str) -> Optional[Tool]:
+        
+    def get_tool(self, name: str) -> Optional['Tool']:
         """Get a tool by name"""
         return self.tools.get(name)
     
     def list_tools(self) -> List[Dict[str, Any]]:
         """List all registered tools"""
         return [tool.to_dict() for tool in self.tools.values()]
+
+# Make registry a singleton
+registry = ToolRegistry()
 
 def define_tool(
     name: str,
@@ -105,6 +113,7 @@ def define_tool(
             version=version,
             tags=tags
         )
+        registry.register(tool)
         
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
