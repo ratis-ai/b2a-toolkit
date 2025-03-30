@@ -13,7 +13,6 @@ from toolkit import define_tool, ToolAuth
         "description": "string",
         "date": "string"
     },
-    output_type="object",
     output_description="The created expense object",
     auth=ToolAuth(
         type="oauth",
@@ -43,5 +42,5 @@ def create_expense(amount: float, category: str, description: str, date: str):
         "category": category,
         "description": description,
         "date": date,
-        "status": "pending"
+        "status": "created"
     } 

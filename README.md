@@ -29,6 +29,12 @@ A lightweight framework to expose any API as an agent-compatible tool. B2A Toolk
   - LangChain tool format
   - CrewAI integration
 
+- **Tool Observability** 🔍
+  - Per-call logging with unique IDs
+  - Real-time log streaming
+  - Web dashboard for monitoring
+  - Usage analytics and debugging
+
 ## Installation
 
 ```bash
@@ -83,15 +89,19 @@ This starts a local server with:
 - GET `/manifest.json` - Get tool definitions
 - POST `/run/<tool_name>` - Execute a tool
 
-5. Use your tools:
+5. Monitor your tools:
 ```bash
-# Get tool manifest
-curl http://localhost:8000/manifest.json
+# View recent tool calls
+toolkit logs --limit 10
 
-# Execute a tool
-curl -X POST http://localhost:8000/run/create_expense \
-  -H "Content-Type: application/json" \
-  -d '{"inputs": {"amount": 100, "category": "office"}}'
+# Follow logs in real-time
+toolkit logs --follow
+
+# Filter logs for specific tool
+toolkit logs --tool create_expense
+
+# Launch web dashboard
+toolkit dashboard
 ```
 
 ## Tool Definition
@@ -122,6 +132,23 @@ toolkit serve <module_path> [--host HOST] [--port PORT]
 ### Test Tool
 ```bash
 toolkit test <tool_name> <module_path>
+```
+
+### View Logs
+```bash
+# View recent logs
+toolkit logs [--tool TOOL_NAME] [--limit N] [--format text|json]
+
+# Follow logs in real-time
+toolkit logs --follow
+
+# Inspect specific tool usage
+toolkit inspect TOOL_NAME --last 5
+```
+
+### Launch Dashboard
+```bash
+toolkit dashboard [--host HOST] [--port PORT]
 ```
 
 ## Examples

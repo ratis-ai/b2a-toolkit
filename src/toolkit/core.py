@@ -4,51 +4,36 @@ Core functionality for ToolPilot
 import functools
 import inspect
 from typing import Any, Callable, Dict, List, Optional, Type, Union
-from .types import ToolAuth, ToolInput, ToolOutput, ToolMetadata
+from .types import ToolAuth, ToolInput, ToolOutput
+from dataclasses import dataclass
+
+@dataclass
+class ToolMetadata:
+    name: str
+    description: str
+    inputs: list
+    output_description: Optional[str] = None
+    auth: Optional[Any] = None
 
 class Tool:
     """Represents a tool that can be used by AI agents"""
-    def __init__(
-        self,
-        func: Callable,
-        name: str,
-        description: str,
-        inputs: Dict[str, str],
-        output_type: str,
-        output_description: str,
-        auth: Optional[ToolAuth] = None,
-        version: str = "0.1.0",
-        tags: Optional[List[str]] = None
-    ):
-        self.func = func
-        self.metadata = ToolMetadata(
-            name=name,
-            description=description,
-            version=version,
-            inputs=[
-                ToolInput(
-                    name=name,
-                    type=type_,
-                    description=f"Input parameter {name}",
-                    required=True
-                )
-                for name, type_ in inputs.items()
-            ],
-            output=ToolOutput(
-                type=output_type,
-                description=output_description
-            ),
-            auth=auth or ToolAuth(type="none", required=False),
-            tags=tags or []
-        )
+    def __init__(self, metadata: ToolMetadata, func: callable):
+        self.metadata = metadata
+        self._func = func
         
-    def __call__(self, *args, **kwargs):
-        """Execute the tool with the given arguments"""
-        return self.func(*args, **kwargs)
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert the tool to a dictionary format"""
-        return self.metadata.model_dump()
+    async def execute(self, **inputs: Dict[str, Any]) -> Any:
+        """Execute the tool with the given inputs"""
+        # TODO: Add input validation here
+        if not self._func:
+            raise RuntimeError("No function implementation provided for tool")
+            
+        # If the function is async, await it, otherwise run it directly
+        if hasattr(self._func, '__await__'):
+            result = await self._func(**inputs)
+        else:
+            result = self._func(**inputs)
+            
+        return result
 
 class ToolRegistry:
     """Registry for managing tools"""
@@ -75,50 +60,19 @@ class ToolRegistry:
 # Make registry a singleton
 registry = ToolRegistry()
 
-def define_tool(
-    name: str,
-    description: str,
-    inputs: Dict[str, str],
-    output_type: str,
-    output_description: str,
-    auth: Optional[ToolAuth] = None,
-    version: str = "0.1.0",
-    tags: Optional[List[str]] = None
-) -> Callable:
-    """
-    Decorator to define a new tool
-    
-    Args:
-        name: Name of the tool
-        description: Description of what the tool does
-        inputs: Dictionary mapping input parameter names to their types
-        output_type: Type of the tool's output
-        output_description: Description of the tool's output
-        auth: Optional authentication configuration
-        version: Version of the tool
-        tags: Optional list of tags/categories
-    
-    Returns:
-        A decorator that can be used to define a tool
-    """
-    def decorator(func: Callable) -> Callable:
-        tool = Tool(
-            func=func,
-            name=name,
-            description=description,
-            inputs=inputs,
-            output_type=output_type,
-            output_description=output_description,
-            auth=auth,
-            version=version,
-            tags=tags
+def define_tool(**tool_config):
+    """Decorator to define a tool"""
+    def decorator(func):
+        metadata = ToolMetadata(
+            name=tool_config['name'],
+            description=tool_config['description'],
+            inputs=tool_config.get('inputs', []),
+            output_description=tool_config.get('output_description'),
+            auth=tool_config.get('auth')
         )
-        registry.register(tool)
         
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            return tool(*args, **kwargs)
-            
-        wrapper.tool = tool
-        return wrapper
+        tool = Tool(metadata=metadata, func=func)
+        func.tool = tool
+        return func
+        
     return decorator 
