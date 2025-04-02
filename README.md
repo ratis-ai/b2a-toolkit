@@ -2,6 +2,8 @@
 
 A lightweight framework to expose any API as an agent-compatible tool. B2A Toolkit makes it easy to create tools that can be used by AI agents, with built-in support for OpenAI's MCP spec, LangChain, and CrewAI.
 
+⭐️ If you find this toolkit useful, please consider giving it a star on GitHub! ⭐️
+
 ## Features
 
 ### Current Capabilities ✅
