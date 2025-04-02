@@ -4,39 +4,6 @@ A lightweight framework to expose any API as an agent-compatible tool. B2A Toolk
 
 ⭐️ If you find this toolkit useful, please consider giving it a star on GitHub! ⭐️
 
-## Features
-
-### Current Capabilities ✅
-
-- **Tool Definition**
-  - Simple decorator-based API
-  - Input/output validation
-  - Type checking and conversion
-  - Built-in documentation support
-
-- **Tool Server**
-  - Local HTTP server for tool execution
-  - Automatic manifest generation
-  - RESTful endpoints for tool invocation
-  - Built-in validation and error handling
-
-- **Authentication**
-  - OAuth support
-  - API key support
-  - Configurable scopes
-  - Optional auth requirements
-
-- **Framework Support**
-  - OpenAI MCP spec compatibility
-  - LangChain tool format
-  - CrewAI integration
-
-- **Tool Observability** 🔍
-  - Per-call logging with unique IDs
-  - Real-time log streaming
-  - Web dashboard for monitoring
-  - Usage analytics and debugging
-
 ## Installation
 
 ```bash
@@ -228,6 +195,38 @@ Check out the `examples/` directory for more examples:
 
 - `expense_tool.py`: A simple expense creation tool
 - More examples coming soon...
+
+## Features
+
+- **Tool Definition**
+  - Simple decorator-based API
+  - Input/output validation
+  - Type checking and conversion
+  - Built-in documentation support
+
+- **Tool Server**
+  - Local HTTP server for tool execution
+  - Automatic manifest generation
+  - RESTful endpoints for tool invocation
+  - Built-in validation and error handling
+
+- **Authentication**
+  - OAuth support
+  - API key support
+  - Configurable scopes
+  - Optional auth requirements
+
+- **Framework Support**
+  - OpenAI MCP spec compatibility
+  - LangChain tool format
+  - CrewAI integration
+
+- **Tool Observability** 🔍
+  - Per-call logging with unique IDs
+  - Real-time log streaming
+  - Web dashboard for monitoring
+  - Usage analytics and debugging
+
 
 ## Contributing
 
