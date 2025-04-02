@@ -89,7 +89,19 @@ This starts a local server with:
 - GET `/manifest.json` - Get tool definitions
 - POST `/run/<tool_name>` - Execute a tool
 
-5. Monitor your tools:
+5. Set up webhooks for monitoring:
+```bash
+# Add a webhook for all tools
+toolkit webhook add https://your-server.com/webhook
+
+# Or add tool-specific webhook with signature verification
+toolkit webhook add https://your-server.com/webhook --tool create_expense --secret your-secret
+
+# List registered webhooks
+toolkit webhook list
+```
+
+6. Monitor your tools:
 ```bash
 # View recent tool calls
 toolkit logs --limit 10
@@ -102,6 +114,15 @@ toolkit logs --tool create_expense
 
 # Launch web dashboard
 toolkit dashboard
+```
+
+7. Replay and debug tool calls:
+```bash
+# Get a call ID from logs
+toolkit logs --tool create_expense --limit 1
+
+# Replay that specific call
+toolkit replay <CALL_ID> examples/expense_tool.py
 ```
 
 ## Tool Definition
@@ -145,6 +166,54 @@ toolkit logs --follow
 # Inspect specific tool usage
 toolkit inspect TOOL_NAME --last 5
 ```
+
+### Manage Webhooks
+```bash
+# Add a webhook
+toolkit webhook add <URL> [--tool TOOL_NAME] [--secret SECRET]
+
+# List registered webhooks
+toolkit webhook list
+
+# Remove a webhook
+toolkit webhook remove <URL> [--tool TOOL_NAME]
+```
+
+Webhooks receive events:
+- `tool.call`: When a tool execution starts
+- `tool.success`: When a tool execution succeeds
+- `tool.error`: When a tool execution fails
+
+Example webhook payload:
+```json
+{
+  "event": "tool.success",
+  "tool": "calculator",
+  "timestamp": "2024-03-14T12:34:56.789Z",
+  "data": {
+    "inputs": {
+      "x": 10,
+      "y": 5,
+      "operation": "add"
+    },
+    "outputs": {
+      "result": 15
+    }
+  }
+}
+```
+
+### Replay Tool Calls
+```bash
+# Replay a specific tool call using its ID
+toolkit replay <CALL_ID> <module_path>
+```
+
+The replay feature allows you to:
+- Re-execute previous tool calls
+- Compare original and replay outputs
+- Debug tool behavior changes
+- Verify tool consistency
 
 ### Launch Dashboard
 ```bash
