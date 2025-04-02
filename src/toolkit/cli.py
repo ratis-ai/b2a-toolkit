@@ -14,7 +14,7 @@ from .logging import ToolLogger
 from .dashboard import create_dashboard
 import importlib.util
 from .webhooks import WebhookManager
-from .replay import ReplayManager
+from .replay import ReplayManager, compare_outputs
 
 def _load_module(module_path: Path) -> object:
     """Load a Python module from a file path using importlib"""
@@ -331,9 +331,12 @@ def replay(call_id: str, module_path: str):
             click.echo(json.dumps(result['replay_result'], indent=2))
             
             if result['original_call'].get('outputs'):
+                click.echo("\n📤 Original output:")
+                click.echo(json.dumps(result['original_call']['outputs'], indent=2))
+                
                 click.echo("\n📊 Output comparison:")
                 click.echo("Original and replay outputs match!" if 
-                         result['original_call']['outputs'] == result['replay_result']
+                         compare_outputs(result['original_call']['outputs'], result['replay_result'])
                          else "⚠️  Outputs differ from original call")
         else:
             click.echo("\n❌ Replay failed:")
